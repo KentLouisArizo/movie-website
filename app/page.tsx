@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation'; 
-import '../app/globals.css';
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import "../app/globals.css";
 
 const HomePage = () => {
   const [popularMovie, setPopularMovie] = useState<any>(null);
@@ -11,8 +11,8 @@ const HomePage = () => {
   const [moviesByCategory, setMoviesByCategory] = useState<any>({});
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filteredMovies, setFilteredMovies] = useState<any[]>([]);
-  
-  const router = useRouter(); 
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchPopularMovie = async () => {
@@ -52,10 +52,13 @@ const HomePage = () => {
       });
 
       const categoriesMovies = await Promise.all(promises);
-      const moviesByCategoryData = categoriesMovies.reduce((acc: any, { genre, movies }: any) => {
-        acc[genre.id] = { genre, movies };
-        return acc;
-      }, {});
+      const moviesByCategoryData = categoriesMovies.reduce(
+        (acc: any, { genre, movies }: any) => {
+          acc[genre.id] = { genre, movies };
+          return acc;
+        },
+        {}
+      );
 
       setMoviesByCategory(moviesByCategoryData);
     };
@@ -81,28 +84,28 @@ const HomePage = () => {
   }, [searchTerm, moviesByCategory]);
 
   if (!popularMovie || !categories.length) {
-    return <div>Loading...</div>;
+    return <div className="text-center text-white p-8">Loading...</div>;
   }
 
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative overflow-hidden bg-gray-900">
       <div
-        className="absolute inset-0 z-[-1]"
+        className="relative z-10 text-white p-8 md:p-16 bg-black bg-opacity-50 h-full flex flex-col justify-center zoom-in fade-in"
         style={{
           backgroundImage: `url(https://image.tmdb.org/t/p/original${popularMovie.backdrop_path})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          height: '100vh',
-          width: '100vw'
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          height: "100vh",
+          width: "100vw",
         }}
-      ></div>
-
-      <div className="relative z-10 text-white p-8 md:p-16 bg-black bg-opacity-50 h-full flex flex-col justify-center">
-        <h1 className="text-4xl md:text-6xl font-bold mb-4">{popularMovie.title}</h1>
-        <p className="text-lg md:text-xl mb-6">{popularMovie.overview}</p>
+      >
+        <h1 className="text-5xl md:text-7xl font-extrabold mb-4">
+          {popularMovie.title}
+        </h1>
+        <p className="text-lg md:text-2xl mb-6">{popularMovie.overview}</p>
 
         {trailerKey && (
-          <div className="mb-6 aspect-w-16 aspect-h-9">
+          <div className="mb-6 aspect-w-16 aspect-h-9 zoom-in fade-in">
             <iframe
               width="100%"
               height="315"
@@ -119,34 +122,37 @@ const HomePage = () => {
           href={`https://vidsrc.xyz/embed/movie?tmdb=${popularMovie.id}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-red-600 text-white py-2 px-6 rounded-lg hover:bg-red-700 transition"
+          className="bg-red-600 text-white py-2 px-6 rounded-lg hover:bg-red-700 transition-transform transform hover:scale-105"
         >
           Watch Now
         </a>
 
         <button
-          onClick={() => router.push('/search')}
-          className="mt-6 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition"
+          onClick={() => router.push("/search")}
+          className="mt-6 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105"
         >
           Search Movies
         </button>
       </div>
 
-      <div className="pt-32 pb-8 px-8 md:px-16 bg-gray-900 text-white">
-        <h2 className="text-3xl font-bold mb-6">Categories</h2>
+      <div className="pt-32 pb-8 px-8 md:px-16 bg-gray-800 text-white">
+        <h2 className="text-4xl font-bold mb-6 fade-in">Categories</h2>
         <div className="mb-8">
           <input
             type="text"
             placeholder="Search for movies..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-3 bg-gray-800 text-white rounded-lg"
+            className="w-full p-4 bg-gray-700 text-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         {searchTerm && filteredMovies.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
             {filteredMovies.map((movie: any) => (
-              <div key={movie.id} className="relative bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <div
+                key={movie.id}
+                className="relative bg-gray-800 rounded-lg overflow-hidden shadow-lg transition-transform transform hover:scale-105"
+              >
                 <img
                   src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                   alt={movie.title}
@@ -154,8 +160,12 @@ const HomePage = () => {
                 />
                 <div className="p-4 text-center">
                   <h4 className="text-lg font-semibold mb-2">{movie.title}</h4>
-                  <p className="text-sm mb-2">{new Date(movie.release_date).toLocaleDateString()}</p>
-                  <p className="text-sm">{movie.overview.substring(0, 100)}...</p>
+                  <p className="text-sm mb-2">
+                    {new Date(movie.release_date).toLocaleDateString()}
+                  </p>
+                  <p className="text-sm mb-4">
+                    {movie.overview.substring(0, 100)}...
+                  </p>
                   <a
                     href={`https://vidsrc.xyz/embed/movie?tmdb=${movie.id}`}
                     target="_blank"
@@ -170,31 +180,42 @@ const HomePage = () => {
           </div>
         ) : (
           categories.map((category) => (
-            <div key={category.id} className="mb-12">
-              <h3 className="text-2xl font-semibold mb-4">{category.name}</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {moviesByCategory[category.id]?.movies.slice(0, 6).map((movie: any) => (
-                  <div key={movie.id} className="relative bg-gray-800 rounded-lg overflow-hidden">
-                    <img
-                      src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                      alt={movie.title}
-                      className="w-full h-auto"
-                    />
-                    <div className="p-4 text-center">
-                      <h4 className="text-lg font-semibold mb-2">{movie.title}</h4>
-                      <p className="text-sm mb-2">{new Date(movie.release_date).toLocaleDateString()}</p>
-                      <p className="text-sm">{movie.overview.substring(0, 100)}...</p>
-                      <a
-                        href={`https://vidsrc.xyz/embed/movie?tmdb=${movie.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-red-500 hover:underline"
-                      >
-                        Watch
-                      </a>
+            <div key={category.id} className="mb-12 zoom-in fade-in">
+              <h3 className="text-3xl font-semibold mb-4">{category.name}</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                {moviesByCategory[category.id]?.movies
+                  .slice(0, 6)
+                  .map((movie: any) => (
+                    <div
+                      key={movie.id}
+                      className="relative bg-gray-800 rounded-lg overflow-hidden shadow-lg transition-transform transform hover:scale-105"
+                    >
+                      <img
+                        src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                        alt={movie.title}
+                        className="w-full h-64 object-cover"
+                      />
+                      <div className="p-4 text-center">
+                        <h4 className="text-lg font-semibold mb-2">
+                          {movie.title}
+                        </h4>
+                        <p className="text-sm mb-2">
+                          {new Date(movie.release_date).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm mb-4">
+                          {movie.overview.substring(0, 100)}...
+                        </p>
+                        <a
+                          href={`https://vidsrc.xyz/embed/movie?tmdb=${movie.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-red-500 hover:underline"
+                        >
+                          Watch
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           ))

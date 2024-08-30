@@ -1,29 +1,42 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./app/**/*.{js,ts,jsx,tsx}", // Adjust according to your folder structure
-    "./pages/**/*.{js,ts,jsx,tsx}", // If using Next.js, include this for pages
-    "./components/**/*.{js,ts,jsx,tsx}", // Include your components folder if you have one
+    "./app/**/*.{js,ts,jsx,tsx}",
+    "./pages/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
-      // Custom colors or spacing can be added here
       colors: {
-        'primary': '#0077b6', // Example primary color
-        'secondary': '#004d99', // Example secondary color
-        'red': {
-          600: '#e63946',
-          700: '#d62839',
+        primary: "#0077b6",
+        secondary: "#004d99",
+        red: {
+          600: "#e63946",
+          700: "#d62839",
         },
-        'gray': {
-          800: '#333333',
-          900: '#1f1f1f',
+        gray: {
+          800: "#333333",
+          900: "#1f1f1f",
         },
       },
       spacing: {
-        '128': '32rem', // Example custom spacing
+        128: "32rem",
+      },
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        zoomIn: {
+          "0%": { transform: "scale(0.9)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+      },
+      animation: {
+        fadeIn: "fadeIn 1s ease-in-out",
+        zoomIn: "zoomIn 1s ease-in-out",
       },
     },
   },
   plugins: [],
-}
+};
