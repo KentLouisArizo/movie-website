@@ -1,113 +1,207 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation'; 
+import '../app/globals.css';
+
+const HomePage = () => {
+  const [popularMovie, setPopularMovie] = useState<any>(null);
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [moviesByCategory, setMoviesByCategory] = useState<any>({});
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [filteredMovies, setFilteredMovies] = useState<any[]>([]);
+  
+  const router = useRouter(); 
+
+  useEffect(() => {
+    const fetchPopularMovie = async () => {
+      const response = await fetch(
+        `https://api.themoviedb.org/3/movie/popular?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&language=en-US&page=1`
+      );
+      const data = await response.json();
+      const movie = data.results[0];
+      setPopularMovie(movie);
+
+      const trailerResponse = await fetch(
+        `https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}`
+      );
+      const trailerData = await trailerResponse.json();
+      const trailer = trailerData.results.find(
+        (video: any) => video.type === "Trailer" && video.site === "YouTube"
+      );
+
+      if (trailer) {
+        setTrailerKey(trailer.key);
+      }
+    };
+
+    const fetchCategoriesAndMovies = async () => {
+      const genresResponse = await fetch(
+        `https://api.themoviedb.org/3/genre/movie/list?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&language=en-US`
+      );
+      const genresData = await genresResponse.json();
+      setCategories(genresData.genres);
+
+      const promises = genresData.genres.map(async (genre: any) => {
+        const moviesResponse = await fetch(
+          `https://api.themoviedb.org/3/discover/movie?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&with_genres=${genre.id}&language=en-US`
+        );
+        const moviesData = await moviesResponse.json();
+        return { genre, movies: moviesData.results };
+      });
+
+      const categoriesMovies = await Promise.all(promises);
+      const moviesByCategoryData = categoriesMovies.reduce((acc: any, { genre, movies }: any) => {
+        acc[genre.id] = { genre, movies };
+        return acc;
+      }, {});
+
+      setMoviesByCategory(moviesByCategoryData);
+    };
+
+    fetchPopularMovie();
+    fetchCategoriesAndMovies();
+  }, []);
+
+  useEffect(() => {
+    if (searchTerm) {
+      const searchMovies = () => {
+        const results = Object.values(moviesByCategory)
+          .flatMap((category: any) => category.movies)
+          .filter((movie: any) =>
+            movie.title.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        setFilteredMovies(results);
+      };
+      searchMovies();
+    } else {
+      setFilteredMovies([]);
+    }
+  }, [searchTerm, moviesByCategory]);
+
+  if (!popularMovie || !categories.length) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <div className="relative overflow-hidden">
+      <div
+        className="absolute inset-0 z-[-1]"
+        style={{
+          backgroundImage: `url(https://image.tmdb.org/t/p/original${popularMovie.backdrop_path})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          height: '100vh',
+          width: '100vw'
+        }}
+      ></div>
+
+      <div className="relative z-10 text-white p-8 md:p-16 bg-black bg-opacity-50 h-full flex flex-col justify-center">
+        <h1 className="text-4xl md:text-6xl font-bold mb-4">{popularMovie.title}</h1>
+        <p className="text-lg md:text-xl mb-6">{popularMovie.overview}</p>
+
+        {trailerKey && (
+          <div className="mb-6 aspect-w-16 aspect-h-9">
+            <iframe
+              width="100%"
+              height="315"
+              src={`https://www.youtube.com/embed/${trailerKey}`}
+              title="Movie Trailer"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+        )}
+
+        <a
+          href={`https://vidsrc.xyz/embed/movie?tmdb=${popularMovie.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-red-600 text-white py-2 px-6 rounded-lg hover:bg-red-700 transition"
+        >
+          Watch Now
+        </a>
+
+        <button
+          onClick={() => router.push('/search')}
+          className="mt-6 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition"
+        >
+          Search Movies
+        </button>
+      </div>
+
+      <div className="pt-32 pb-8 px-8 md:px-16 bg-gray-900 text-white">
+        <h2 className="text-3xl font-bold mb-6">Categories</h2>
+        <div className="mb-8">
+          <input
+            type="text"
+            placeholder="Search for movies..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-3 bg-gray-800 text-white rounded-lg"
+          />
         </div>
+        {searchTerm && filteredMovies.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {filteredMovies.map((movie: any) => (
+              <div key={movie.id} className="relative bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <img
+                  src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                  alt={movie.title}
+                  className="w-full h-64 object-cover"
+                />
+                <div className="p-4 text-center">
+                  <h4 className="text-lg font-semibold mb-2">{movie.title}</h4>
+                  <p className="text-sm mb-2">{new Date(movie.release_date).toLocaleDateString()}</p>
+                  <p className="text-sm">{movie.overview.substring(0, 100)}...</p>
+                  <a
+                    href={`https://vidsrc.xyz/embed/movie?tmdb=${movie.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-red-500 hover:underline"
+                  >
+                    Watch
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          categories.map((category) => (
+            <div key={category.id} className="mb-12">
+              <h3 className="text-2xl font-semibold mb-4">{category.name}</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {moviesByCategory[category.id]?.movies.slice(0, 6).map((movie: any) => (
+                  <div key={movie.id} className="relative bg-gray-800 rounded-lg overflow-hidden">
+                    <img
+                      src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                      alt={movie.title}
+                      className="w-full h-auto"
+                    />
+                    <div className="p-4 text-center">
+                      <h4 className="text-lg font-semibold mb-2">{movie.title}</h4>
+                      <p className="text-sm mb-2">{new Date(movie.release_date).toLocaleDateString()}</p>
+                      <p className="text-sm">{movie.overview.substring(0, 100)}...</p>
+                      <a
+                        href={`https://vidsrc.xyz/embed/movie?tmdb=${movie.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-red-500 hover:underline"
+                      >
+                        Watch
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
       </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </div>
   );
-}
+};
+
+export default HomePage;
