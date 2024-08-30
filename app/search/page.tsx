@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Import useRouter from next/navigation
-import '../globals.css'; // Correct path to globals.css
+import { useRouter } from 'next/navigation';
+import '../globals.css'; 
 
 const SearchPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter(); 
 
   useEffect(() => {
     const fetchSearchResults = async () => {
@@ -28,9 +28,9 @@ const SearchPage = () => {
 
   return (
     <div className="p-8 md:p-16 bg-gray-900 text-white min-h-screen">
-      {/* Back Button */}
+
       <button
-        onClick={() => router.back()} // Navigate to the previous page
+        onClick={() => router.back()}
         className="mb-6 px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
       >
         Back
